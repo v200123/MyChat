@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+android:background="@color/colorPrimary"
+    tools:context=".MainActivity"
+    >
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:src="@drawable/ic_launcher_foreground"
+        android:id="@+id/civ_user_image_act_login"
+        android:layout_margin="20dp"
+        android:layout_width="96dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_height="96dp"
+        />
+    <EditText
+        android:id="@+id/loginName"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:background="@drawable/bg_account_input"
+        android:hint="@string/accountname"
+        android:padding="8dp"
+        android:layout_margin="8dp"
+        />
+        <Button
+            android:id="@+id/login_btn"
+            android:background="@color/grey_text_or_bg"
+            android:layout_width="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/Login"
+            android:layout_height="wrap_content" />
+
+</LinearLayout>
