@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.coffee_just.mychat.bean.Message;
+import com.coffee_just.mychat.bean.User;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -143,7 +144,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void sendMsg(String Msg) {
        new Thread(() -> {
-           printWriter.println(Msg);
+           printWriter.println(Msg+"|"+ User.InstanceUser().getId().toString());
            Log.d(TAG, "sendMsg: \n"+printWriter.checkError());
            Log.d(TAG, "seneMsg: \n" + Msg);
 
