@@ -13,8 +13,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,54 +47,95 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveUser() {
-        BufferedWriter writer = null;
+//        BufferedWriter writer = null;
+//        try {
+//            user = User.InstanceUser();
+//            user.setName(userName.getText().toString());
+//            writer = new BufferedWriter(new OutputStreamWriter(openFileOutput("date", Context.MODE_PRIVATE)));
+////            Log.d("User", "saveUser: "+User.InstanceUser());
+//            writer.write(user.toString());
+//            writer.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (writer != null) {
+//                try {
+//                    writer.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+        user = User.InstanceUser();
+        user.setName(userName.getText().toString());
+        ObjectOutputStream write =null;
+
         try {
-            user = User.InstanceUser();
-            user.setName(userName.getText().toString());
-            writer = new BufferedWriter(new OutputStreamWriter(openFileOutput("date", Context.MODE_PRIVATE)));
-//            Log.d("User", "saveUser: "+User.InstanceUser());
-            writer.write(user.toString());
-            writer.flush();
-        } catch (IOException e) {
+            write = new ObjectOutputStream(openFileOutput("date",Context.MODE_PRIVATE));
+            write.writeObject(user);
+            write.flush();
+        }
+         catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (writer != null) {
+        }finally {
+            if (write!=null)
+            {
                 try {
-                    writer.close();
+                    write.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
+
     }
 
     private void loadUser() {
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(openFileInput("date")));
-            String line;
-            String[] lines;
-            while ((line = reader.readLine()) != null) {
-                lines = line.split("\\|");
-                user = User.InstanceUser();
-                user.setName(lines[0]);
+//        BufferedReader reader = null;
+//        try {
+//            reader = new BufferedReader(new InputStreamReader(openFileInput("date")));
+//            String line;
+//            String[] lines;
+//            while ((line = reader.readLine()) != null) {
+//                lines = line.split("\\|");
+//                user = User.InstanceUser();
+//                user.setName(lines[0]);
+//
+//                Toast.makeText(getApplicationContext(), "sdsdadad", Toast.LENGTH_SHORT).show();
+//            }
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (reader != null) {
+//                try {
+//                    reader.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+        ObjectInputStream read = null;
 
-                Toast.makeText(getApplicationContext(), "sdsdadad", Toast.LENGTH_SHORT).show();
-            }
-        } catch (FileNotFoundException e) {
+        try {
+            read = new ObjectInputStream(openFileInput("date"));
+            user = (User) read.readObject();
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (reader != null) {
+        }
+        finally {
+            if(read!=null)
+            {
                 try {
-                    reader.close();
+                    read.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
-
 
     }
 }

@@ -1,6 +1,10 @@
 package com.coffee_just.mychat;
 
+import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +16,21 @@ import android.widget.Toast;
 
 import com.coffee_just.mychat.bean.Message;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +43,17 @@ public class ChatActivity extends AppCompatActivity {
     private ArrayList<Message> mMessages = new ArrayList<>();
     private Button mButton;
     private EditText mEditText;
+    private Adapter adapter;
+    private Socket clientSocket;
+    private static final String TAG = "TAG";
+    private static final String HOST = "192.168.2.172";
+    private static final int PORT = 4008;
+    private PrintWriter printWriter;
+    private BufferedReader in;
+    private String receiveMsg,sendMsg;
+    boolean flag = false;
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,26 +61,97 @@ public class ChatActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.chat_recycle_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
         mRecyclerView.setLayoutManager(layoutManager);
-        Adapter adapter = new Adapter(mMessages);
+        adapter = new Adapter(mMessages);
         mRecyclerView.setAdapter(adapter);
         mButton = findViewById(R.id.Btn_send);
         mEditText = findViewById(R.id.chat_input);
+        connectService service = new connectService();
+        Thread t = new Thread(service);
+        t.start();
 
-        mButton.setOnClickListener(view->{
-            if(!mEditText.getText().toString().equals(""))
-            {
-                Message msg = new Message(mEditText.getText().toString(),Message.TYPE_SENT);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        mButton.setOnClickListener(view -> {
+            if (!mEditText.getText().toString().equals("")) {
+                Message msg = new Message(mEditText.getText().toString(), Message.TYPE_SENT);
                 mMessages.add(msg);
-                adapter.notifyItemInserted(mMessages.size()-1);
-                mRecyclerView.scrollToPosition(mMessages.size()-1);
-                mEditText.setText("");
-                Toast.makeText(getApplicationContext(),"陈工发送",Toast.LENGTH_SHORT).show();
+                adapter.notifyItemInserted(mMessages.size() - 1);
+                mRecyclerView.scrollToPosition(mMessages.size() - 1);
+                if (clientSocket != null) {
+                    sendMsg(msg.getContent());
+                    mEditText.setText("");
+                }
             }
 
+
+//                if(clientSocket!=null)
+//                {
+//
+//                android.os.Message message = handler.obtainMessage();
+//                message.what =1 ;
+//                message.obj = msg.getContent();
+//                handler.sendMessage(message);
+//                }
         });
     }
 
+    private class connectService implements Runnable {
+
+        @Override
+        public void run() {
+            System.out.println("线程在运行。。。。。。。。。。。。");
+            try {
+                clientSocket = new Socket(HOST, PORT);
+                printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8)), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
+                receiverMsg();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.d(TAG, "run: " + e.getMessage());
+            }
+            }
+        }
+
+    private void receiverMsg() {
+        System.out.println("zhixingle");
+        @SuppressLint("StaticFieldLeak")
+        AsyncTask<Void,Void,Void> Task = new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                try {
+                    String Line;
+                        while ((receiveMsg = in.readLine()) != null) {
+                            Line = receiveMsg;
+                            Log.d(TAG, "doInBackground: \n\n\n"+Line);
+                        }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+        Task.execute();
+
+    }
+
+
+
+
+    private void sendMsg(String Msg) {
+       new Thread(() -> {
+           printWriter.println(Msg);
+           Log.d(TAG, "sendMsg: \n"+printWriter.checkError());
+           Log.d(TAG, "seneMsg: \n" + Msg);
+
+       }).start();
+    }
 }
+
+
 
 class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder>
 {
@@ -99,4 +199,6 @@ class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder>
             rightText = itemView.findViewById(R.id.right_msg);
         }
     }
+
+
 }

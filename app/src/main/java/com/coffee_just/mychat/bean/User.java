@@ -1,8 +1,9 @@
 package com.coffee_just.mychat.bean;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class User {
+public class User  implements Serializable {
     @Override
     public String toString() {
         return  name + '|' + id ;
