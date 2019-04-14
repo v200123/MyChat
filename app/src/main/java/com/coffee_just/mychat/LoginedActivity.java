@@ -1,17 +1,16 @@
 package com.coffee_just.mychat;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
 
-
-import com.chaychan.library.BottomBarLayout;
+import com.bumptech.glide.Glide;
 import com.coffee_just.mychat.fragment.MyFragmentPagerAdapter;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
-
-import java.util.MissingFormatArgumentException;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.viewpager.widget.ViewPager;
 
 public class LoginedActivity extends AppCompatActivity {
@@ -19,6 +18,8 @@ public class LoginedActivity extends AppCompatActivity {
     private TabLayout mTabLayout;
     private TabLayout.Tab one;
     private TabLayout.Tab two;
+    private NavigationView navigationView;
+    private ImageView mImageView;
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_logined1);
@@ -29,5 +30,10 @@ public class LoginedActivity extends AppCompatActivity {
         mTabLayout.setupWithViewPager(mViewPager);
         one = mTabLayout.getTabAt(0);
         two = mTabLayout.getTabAt(1);
+        navigationView = findViewById(R.id.nav_view);
+        View headerLayout = navigationView.inflateHeaderView(R.layout.nav_header_logined1);
+        mImageView = headerLayout.findViewById(R.id.imageView);
+        Glide.with(getApplicationContext()).load("http://www.wanandroid.com/resources/image/pc/logo.png").into(mImageView);
+
     }
 }

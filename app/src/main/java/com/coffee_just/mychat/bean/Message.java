@@ -1,10 +1,9 @@
 package com.coffee_just.mychat.bean;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.io.Serializable;
 import java.util.UUID;
 
-public class Message {
+public class Message implements Serializable {
     public static final int TYPE_RECEIVED = 0;
     public static final int TYPE_SENT = 1;
     private String content;

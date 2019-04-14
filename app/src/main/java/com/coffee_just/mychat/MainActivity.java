@@ -1,24 +1,22 @@
 package com.coffee_just.mychat;
 
+import android.annotation.TargetApi;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.coffee_just.mychat.bean.User;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -33,11 +31,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         userName = findViewById(R.id.loginName);
         loginBtn = findViewById(R.id.login_btn);
-        if (new File(getFilesDir() + "/date").exists()) {
-            loadUser();
-            userName.setText(user.getName());
-            userName.clearFocus();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel("ChatMsg", "聊天消息", NotificationManager.IMPORTANCE_HIGH);
         }
+        if (new File(getFilesDir() + "/date").exists()) {
+            Intent i = new Intent(this, LoginedActivity.class);
+            loadUser();
+            startActivity(i);
+            new Handler().postDelayed(this::finish, 100);
+        }
+
         loginBtn.setOnClickListener((view) -> {
             saveUser();
             Intent i = new Intent(this, LoginedActivity.class);
@@ -68,18 +71,16 @@ public class MainActivity extends AppCompatActivity {
 //        }
         user = User.InstanceUser();
         user.setName(userName.getText().toString());
-        ObjectOutputStream write =null;
+        ObjectOutputStream write = null;
 
         try {
-            write = new ObjectOutputStream(openFileOutput("date",Context.MODE_PRIVATE));
+            write = new ObjectOutputStream(openFileOutput("date", Context.MODE_PRIVATE));
             write.writeObject(user);
             write.flush();
-        }
-         catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        }finally {
-            if (write!=null)
-            {
+        } finally {
+            if (write != null) {
                 try {
                     write.close();
                 } catch (IOException e) {
@@ -91,31 +92,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadUser() {
-//        BufferedReader reader = null;
-//        try {
-//            reader = new BufferedReader(new InputStreamReader(openFileInput("date")));
-//            String line;
-//            String[] lines;
-//            while ((line = reader.readLine()) != null) {
-//                lines = line.split("\\|");
-//                user = User.InstanceUser();
-//                user.setName(lines[0]);
-//
-//                Toast.makeText(getApplicationContext(), "sdsdadad", Toast.LENGTH_SHORT).show();
-//            }
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (reader != null) {
-//                try {
-//                    reader.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
         ObjectInputStream read = null;
 
         try {
@@ -125,10 +101,8 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        finally {
-            if(read!=null)
-            {
+        } finally {
+            if (read != null) {
                 try {
                     read.close();
                 } catch (IOException e) {
@@ -136,6 +110,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
 
+    @TargetApi(Build.VERSION_CODES.O)
+    private void createNotificationChannel(String channelId, String channelName, int importance) {
+        NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(
+                NOTIFICATION_SERVICE);
+        notificationManager.createNotificationChannel(channel);
     }
 }

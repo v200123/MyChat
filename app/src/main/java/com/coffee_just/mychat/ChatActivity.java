@@ -1,6 +1,9 @@
 package com.coffee_just.mychat;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,7 +15,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.coffee_just.mychat.bean.Message;
 import com.coffee_just.mychat.bean.User;
@@ -20,22 +22,17 @@ import com.coffee_just.mychat.bean.User;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.ref.WeakReference;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -47,12 +44,27 @@ public class ChatActivity extends AppCompatActivity {
     private Adapter adapter;
     private Socket clientSocket;
     private static final String TAG = "TAG";
-    private static final String HOST = "192.168.2.172";
+    private static final String HOST = "148.70.109.190";
     private static final int PORT = 4008;
     private PrintWriter printWriter;
     private BufferedReader in;
-    private String receiveMsg,sendMsg;
-    boolean flag = false;
+    private String receiveMsg;
+    @SuppressLint("HandlerLeak")
+    private Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            super.handleMessage(msg);
+            if (msg.what==0)
+            {
+                String Line = (String) msg.obj;
+                Message message = new Message(Line, Message.TYPE_RECEIVED);
+                mMessages.add(message);
+                sendChatMsg(Line);
+                adapter.notifyItemInserted(mMessages.size() - 1);
+                mRecyclerView.scrollToPosition(mMessages.size() - 1);
+            }
+        }
+    };
 
 
     @Override
@@ -84,8 +96,7 @@ public class ChatActivity extends AppCompatActivity {
                 mRecyclerView.scrollToPosition(mMessages.size() - 1);
                 if (clientSocket != null) {
                     sendMsg(msg.getContent());
-                    mEditText.setText("");
-                }
+                }mEditText.setText("");
             }
 
 
@@ -118,7 +129,6 @@ public class ChatActivity extends AppCompatActivity {
         }
 
     private void receiverMsg() {
-        System.out.println("zhixingle");
         @SuppressLint("StaticFieldLeak")
         AsyncTask<Void,Void,Void> Task = new AsyncTask<Void, Void, Void>() {
             @Override
@@ -128,6 +138,12 @@ public class ChatActivity extends AppCompatActivity {
                         while ((receiveMsg = in.readLine()) != null) {
                             Line = receiveMsg;
                             Log.d(TAG, "doInBackground: \n\n\n"+Line);
+
+
+                            android.os.Message message = new android.os.Message();
+                            message.what = 0;
+                            message.obj = Line;
+                            mHandler.sendMessage(message);
                         }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -138,16 +154,32 @@ public class ChatActivity extends AppCompatActivity {
         Task.execute();
 
     }
-
-
+//发送通知栏的消息
+    public void sendChatMsg(String Msg) {
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Notification notification = new NotificationCompat.Builder(this, "chat")
+                .setContentTitle("收到一条聊天消息")
+                .setContentText(Msg)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.img05)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.img05))
+                .setAutoCancel(true)
+                .build();
+        manager.notify(1, notification);
+    }
 
 
     private void sendMsg(String Msg) {
        new Thread(() -> {
-           printWriter.println(Msg+"|"+ User.InstanceUser().getId().toString());
-           Log.d(TAG, "sendMsg: \n"+printWriter.checkError());
-           Log.d(TAG, "seneMsg: \n" + Msg);
-
+           if(Msg.equals("0"))
+           {
+               printWriter.println("0");
+           }
+           else {
+               printWriter.println(Msg + "|" + User.InstanceUser().getId().toString());
+               Log.d(TAG, "sendMsg: \n" + printWriter.checkError());
+               Log.d(TAG, "seneMsg: \n" + Msg);
+           }
        }).start();
     }
 }
