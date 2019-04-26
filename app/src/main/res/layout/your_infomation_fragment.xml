@@ -2,10 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <TextView
+    <ListView
+        android:id="@+id/choiceCity"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:textSize="40dp"
-        android:gravity="center_vertical"
-        android:text="之二是测试的"/>
+        android:layout_height="wrap_content">
+    </ListView>
+    <TextView
+        android:id="@+id/city_name_weather"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </LinearLayout>

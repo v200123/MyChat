@@ -16,8 +16,17 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.coffee_just.mychat.bean.Message;
 import com.coffee_just.mychat.bean.User;
+
+import org.litepal.LitePal;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -29,22 +38,15 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 public class ChatActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
-    private ArrayList<Message> mMessages = new ArrayList<>();
+    private ArrayList<Message> mMessages ;
     private Button mButton;
     private EditText mEditText;
     private Adapter adapter;
     private Socket clientSocket;
     private static final String TAG = "TAG";
-    private static final String HOST = "148.70.109.190";
+    private static final String HOST = /*"148.70.109.190"*/"192.168.2.172";
     private static final int PORT = 4008;
     private PrintWriter printWriter;
     private BufferedReader in;
@@ -57,9 +59,14 @@ public class ChatActivity extends AppCompatActivity {
             if (msg.what==0)
             {
                 String Line = (String) msg.obj;
-                Message message = new Message(Line, Message.TYPE_RECEIVED);
+                String[] split = Line.split("\\u007C");
+                Message message = new Message(split[0], Message.TYPE_RECEIVED);
+                if(!(split.length==1))
+                {
+                    message.setFromUUID(split[1]);
+                }
+                message.save();
                 mMessages.add(message);
-                sendChatMsg(Line);
                 adapter.notifyItemInserted(mMessages.size() - 1);
                 mRecyclerView.scrollToPosition(mMessages.size() - 1);
             }
@@ -74,13 +81,21 @@ public class ChatActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.chat_recycle_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
         mRecyclerView.setLayoutManager(layoutManager);
-        adapter = new Adapter(mMessages);
-        mRecyclerView.setAdapter(adapter);
         mButton = findViewById(R.id.Btn_send);
         mEditText = findViewById(R.id.chat_input);
+        if(LitePal.count(Message.class)!=0)
+        {
+            mMessages = (ArrayList<Message>) LitePal.findAll(Message.class);
+        }
+        else
+            mMessages=new ArrayList<>();
+        adapter = new Adapter(mMessages);
+        mRecyclerView.setAdapter(adapter);
+        mRecyclerView.scrollToPosition(mMessages.size() - 1);
         connectService service = new connectService();
         Thread t = new Thread(service);
         t.start();
+
 
     }
 
@@ -92,22 +107,17 @@ public class ChatActivity extends AppCompatActivity {
             if (!mEditText.getText().toString().equals("")) {
                 Message msg = new Message(mEditText.getText().toString(), Message.TYPE_SENT);
                 mMessages.add(msg);
+                msg.save();
                 adapter.notifyItemInserted(mMessages.size() - 1);
                 mRecyclerView.scrollToPosition(mMessages.size() - 1);
                 if (clientSocket != null) {
                     sendMsg(msg.getContent());
-                }mEditText.setText("");
+                    msg.setFromUUID(User.InstanceUser().getId());
+                    msg.save();
+                }
+                    mEditText.setText("");
+                    msg =null;
             }
-
-
-//                if(clientSocket!=null)
-//                {
-//
-//                android.os.Message message = handler.obtainMessage();
-//                message.what =1 ;
-//                message.obj = msg.getContent();
-//                handler.sendMessage(message);
-//                }
         });
     }
 
@@ -127,7 +137,7 @@ public class ChatActivity extends AppCompatActivity {
             }
             }
         }
-
+//收到消息
     private void receiverMsg() {
         @SuppressLint("StaticFieldLeak")
         AsyncTask<Void,Void,Void> Task = new AsyncTask<Void, Void, Void>() {
@@ -138,8 +148,7 @@ public class ChatActivity extends AppCompatActivity {
                         while ((receiveMsg = in.readLine()) != null) {
                             Line = receiveMsg;
                             Log.d(TAG, "doInBackground: \n\n\n"+Line);
-
-
+                            sendChatMsg(Line);
                             android.os.Message message = new android.os.Message();
                             message.what = 0;
                             message.obj = Line;
@@ -157,13 +166,15 @@ public class ChatActivity extends AppCompatActivity {
 //发送通知栏的消息
     public void sendChatMsg(String Msg) {
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        Notification notification = new NotificationCompat.Builder(this, "chat")
+        Notification notification = new NotificationCompat.Builder(this, "ChatMsg")
                 .setContentTitle("收到一条聊天消息")
                 .setContentText(Msg)
                 .setWhen(System.currentTimeMillis())
                 .setSmallIcon(R.drawable.img05)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.img05))
                 .setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_SOCIAL)
+                .setDefaults(Notification.DEFAULT_ALL)
                 .build();
         manager.notify(1, notification);
     }
@@ -175,10 +186,15 @@ public class ChatActivity extends AppCompatActivity {
            {
                printWriter.println("0");
            }
+           if(Msg.equals("收到心跳包"))
+           {
+               printWriter.println("收到心跳包");
+           }
            else {
-               printWriter.println(Msg + "|" + User.InstanceUser().getId().toString());
+               printWriter.println(Msg + "|" + User.InstanceUser().getId());
                Log.d(TAG, "sendMsg: \n" + printWriter.checkError());
-               Log.d(TAG, "seneMsg: \n" + Msg);
+               Log.d(TAG, "seneMsg: \n" + Msg + "|" + LitePal.where("name").find(User.class));
+
            }
        }).start();
     }
@@ -190,7 +206,7 @@ class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder>
 {
     private ArrayList<Message> mMessageArrayList;
 
-    public Adapter(ArrayList list) {
+    Adapter(ArrayList<Message> list) {
         mMessageArrayList = list;
     }
 
@@ -218,7 +234,7 @@ class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder>
 
     @Override
     public int getItemCount() {
-        return mMessageArrayList.size();
+        return mMessageArrayList ==null ? 0  :  mMessageArrayList.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
