@@ -3,22 +3,21 @@ package com.coffee_just.mychat;
 import android.annotation.TargetApi;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.Context;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.Button;
 import android.widget.EditText;
-
-import com.coffee_just.mychat.bean.User;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.coffee_just.mychat.bean.User;
+import com.coffee_just.mychat.utils.Utility;
+
+import org.litepal.LitePal;
 
 public class MainActivity extends AppCompatActivity {
     private EditText userName;
@@ -31,13 +30,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         userName = findViewById(R.id.loginName);
         loginBtn = findViewById(R.id.login_btn);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel("ChatMsg", "聊天消息", NotificationManager.IMPORTANCE_HIGH);
+            createNotificationChannel("ChatMsg", "聊天消息", NotificationManager.IMPORTANCE_MAX);
         }
-        if (new File(getFilesDir() + "/date").exists()) {
+        if (LitePal.findFirst(User.class)!=null) {
             Intent i = new Intent(this, LoginedActivity.class);
             loadUser();
             startActivity(i);
+            Toast.makeText(getApplicationContext(), "读取成功", Toast.LENGTH_SHORT).show();
             new Handler().postDelayed(this::finish, 100);
         }
 
@@ -50,66 +51,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveUser() {
-//        BufferedWriter writer = null;
+        //使用文件系统来存储姓名和ID
+//        user = User.InstanceUser();
+//        user.setName(userName.getText().toString());
+//        ObjectOutputStream write = null;
+//
 //        try {
-//            user = User.InstanceUser();
-//            user.setName(userName.getText().toString());
-//            writer = new BufferedWriter(new OutputStreamWriter(openFileOutput("date", Context.MODE_PRIVATE)));
-////            Log.d("User", "saveUser: "+User.InstanceUser());
-//            writer.write(user.toString());
-//            writer.flush();
+//            write = new ObjectOutputStream(openFileOutput("date", Context.MODE_PRIVATE));
+//            write.writeObject(user);
+//            write.flush();
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        } finally {
-//            if (writer != null) {
+//            if (write != null) {
 //                try {
-//                    writer.close();
+//                    write.close();
 //                } catch (IOException e) {
 //                    e.printStackTrace();
 //                }
 //            }
 //        }
+        Utility.getProvience();
         user = User.InstanceUser();
         user.setName(userName.getText().toString());
-        ObjectOutputStream write = null;
-
-        try {
-            write = new ObjectOutputStream(openFileOutput("date", Context.MODE_PRIVATE));
-            write.writeObject(user);
-            write.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (write != null) {
-                try {
-                    write.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        ContentValues values = new ContentValues();
+        if (user.save())
+        {
+            Toast.makeText(getApplicationContext(), "存储成功", Toast.LENGTH_SHORT).show();
         }
-
+        else
+        Toast.makeText(getApplicationContext(), "存储失败", Toast.LENGTH_SHORT).show();
     }
 
     private void loadUser() {
-        ObjectInputStream read = null;
-
-        try {
-            read = new ObjectInputStream(openFileInput("date"));
-            user = (User) read.readObject();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (read != null) {
-                try {
-                    read.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+                user = LitePal.findFirst(User.class);
     }
 
     @TargetApi(Build.VERSION_CODES.O)

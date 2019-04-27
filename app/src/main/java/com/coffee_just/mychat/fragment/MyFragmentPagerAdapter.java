@@ -1,12 +1,11 @@
 package com.coffee_just.mychat.fragment;
 
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
 public class MyFragmentPagerAdapter extends FragmentPagerAdapter {
-    private String[] mTitles = new String[]{"聊天","我的信息"};
+    private String[] mTitles = new String[]{"聊天","天气情况"};
     public MyFragmentPagerAdapter(FragmentManager fm) {
         super(fm);
     }
