@@ -15,6 +15,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.coffee_just.mychat.bean.User;
+import com.coffee_just.mychat.utils.Utility;
 
 import org.litepal.LitePal;
 
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         userName = findViewById(R.id.loginName);
         loginBtn = findViewById(R.id.login_btn);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel("ChatMsg", "聊天消息", NotificationManager.IMPORTANCE_MAX);
         }
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 //                }
 //            }
 //        }
+        Utility.getProvience();
         user = User.InstanceUser();
         user.setName(userName.getText().toString());
         ContentValues values = new ContentValues();
